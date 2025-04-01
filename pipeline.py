@@ -10,11 +10,11 @@ import joblib
 
 
 # Définition des listes de variables
-numeric_features = ['MentHlth', 'PhysHlth', 'BMI']  # Variables continues
-ordinal_features = ['GenHlth', 'Age', 'Education', 'Income']  # Variables ordinales
+numeric_features = ['MentHlth', 'PhysHlth', 'BMI']
+ordinal_features = ['GenHlth', 'Age', 'Education', 'Income']
 categorical_features = ['HighBP', 'HighChol', 'CholCheck', 'Smoker', 'Stroke', 
                         'HeartDiseaseorAttack', 'PhysActivity', 'Fruits', 'Veggies', 
-                        'HvyAlcoholConsump', 'AnyHealthcare', 'NoDocbcCost', 'DiffWalk', 'Sex']  # Variables catégorielles
+                        'HvyAlcoholConsump', 'AnyHealthcare', 'NoDocbcCost', 'DiffWalk', 'Sex']
 
 # Préprocesseur pour l'imputation
 imputer = ColumnTransformer(
@@ -23,23 +23,23 @@ imputer = ColumnTransformer(
         ('cont_imputer', SimpleImputer(strategy='median'), ['BMI', 'MentHlth', 'PhysHlth', 'Age']),
         ('ord_imputer', SimpleImputer(strategy='constant', fill_value=-1), ['Education', 'Income']),
     ],
-    remainder='passthrough'  # Conserver les colonnes non spécifiées
+    remainder='passthrough'
 )
 
 # Pipeline pour les variables numériques
 num_transformer = Pipeline(steps=[
-    ('scaler', StandardScaler())  # Standardisation
+    ('scaler', StandardScaler())
 ])
 
 # Pipeline pour les variables ordinales
 ord_transformer = Pipeline(steps=[
-    ('scaler', StandardScaler())  # Standardisation
+    ('scaler', StandardScaler())
 ])
 
 
 # Pipeline pour les variables catégorielles
 categorical_pipeline = Pipeline(steps=[
-    ('encoder', OneHotEncoder(handle_unknown='ignore'))  # Encodage one-hot
+    ('encoder', OneHotEncoder(handle_unknown='ignore'))
 ])
 
 # Combinaison des pipelines dans un ColumnTransformer

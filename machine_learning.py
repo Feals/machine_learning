@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.model_selection import GridSearchCV
+from imblearn.over_sampling import RandomOverSampler
 
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import (
@@ -22,20 +23,20 @@ from sklearn.metrics import (
 # Chargement des données
 df = pd.read_csv("cdc_diabetes_health_indicators.csv")
 
-# Séparation des features et de la cible
-X = df.drop('Diabetes_binary', axis=1)  # adapter le nom de la variable cible
+X = df.drop('Diabetes_binary', axis=1)
 y = df['Diabetes_binary']
 
-# Conserver l'ordre et les noms des labels (par exemple "non-diabétique" et "diabétique")
 classes = sorted(y.unique())
 
+OverS = RandomOverSampler(random_state=42, sampling_strategy='not majority')
+x_over, y_over = OverS.fit_resample(X, y)
+
 # Division train/test
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(x_over, y_over, test_size=0.2, random_state=42)
 
 
 
 # Chargement des pipelines pour chaque modèle
-# Chargement des pipelines de modèles
 pipelines = {
     "LogisticRegression": joblib.load("logistic_pipeline.pkl"),
     "RandomForestClassifier": joblib.load("rf_pipeline.pkl"),
@@ -50,18 +51,18 @@ param_grids = {
         'classifier__solver': ['liblinear']
     },
     "RandomForestClassifier": {
-        'classifier__n_estimators': [250,300],
-        'classifier__max_depth': [7],
-        'classifier__min_samples_split': [15]
+        'classifier__n_estimators': [10, 50, 100, 200],
+        'classifier__max_depth': [8, 10 , 12],
+        'classifier__min_samples_split': [5 ,10 ,15,20]
     },
     "GradientBoostingClassifier": {
-        'classifier__n_estimators': [200,250,300],
-        'classifier__learning_rate': [0.1,1,2],
-        'classifier__max_depth': [3,4,5]
+        'classifier__n_estimators': [200],
+        'classifier__learning_rate': [2, 3],
+        'classifier__max_depth': [5, 6]
     },
     "AdaBoostClassifier": {
-        'classifier__n_estimators': [250, 500],
-        'classifier__learning_rate': [1.5, 2]
+        'classifier__n_estimators': [250],
+        'classifier__learning_rate': [2, 3]
     }
 }
 
@@ -70,12 +71,12 @@ best_models = {}
 for model_name, pipeline in pipelines.items():
     print(f"Optimisation du modèle: {model_name}")
     param_grid = param_grids[model_name]
-    grid_search = GridSearchCV(pipeline, param_grid, cv=5, scoring=make_scorer(recall_score, pos_label=1), n_jobs=-1)
+    grid_search = GridSearchCV(pipeline, param_grid, cv=5, scoring=make_scorer(accuracy_score, pos_label=1), n_jobs=-1)
     grid_search.fit(X_train, y_train)
     
     best_models[model_name] = grid_search.best_estimator_
     print(f"Meilleurs hyperparamètres pour {model_name}: {grid_search.best_params_}")
-    print(f"Meilleur score au recall: {grid_search.best_score_:.4f}\n")
+    print(f"Meilleur score sur l'accuracy: {grid_search.best_score_:.4f}\n")
 
 # Évaluation des meilleurs modèles
 for model_name, best_model in best_models.items():
@@ -126,7 +127,6 @@ for model_name, best_model in best_models.items():
         plt.legend(loc="lower right")
         plt.show()
     
-    # Sauvegarde du modèle optimisé
     joblib.dump(best_model, f"best_{model_name.lower().replace(' ', '_')}_model.pkl")
 
 print("Tous les modèles optimisés ont été sauvegardés et évalués.")
